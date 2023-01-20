@@ -1,6 +1,8 @@
 import './App.css';
+import React, {useEffect, useState} from 'react';
 import * as Tone from 'tone'
-import { Chord, Note, Scale } from "tonal";
+import p5 from 'p5'
+import { Chord, fillStr, Note, Scale } from "tonal";
 import { LowpassCombFilter, Player, Sampler, Time } from 'tone';
 import { major7th, minor7th, dominant7th, invert, minor} from '@generative-music/utilities'
 
@@ -19,34 +21,229 @@ import D6 from './sounds/harp/KSHarp_D6_mf.wav'
 import airportReverb from './sounds/convolutionreverb/AirportTerminal.wav'
 import bloom2 from './sounds/convolutionreverb/Midiverb_II-49-Bloom2 7sec.wav'
 import reverse from './sounds/convolutionreverb/Midiverb_II-44-Reverse 150msec.wav'
+import { CircleBufferGeometry } from 'three';
 // import { LinearEncoding } from 'three';
 
 
 
 
-function App() {
-
-  // RANDOMIZERS
-
-  function getRandomUpTo(max){
-    return Math.random() * max;
+class App extends React.Component {
+  
+  constructor() {
+    super()
+    this.myRef = React.createRef()
   }
 
-  function getRandomFromArray(arr) {
-    return arr[Math.floor(getRandomUpTo(arr.length))]
+  Sketch = (p5) => {
+  /////////////////////
+  //// randomizers ////
+  /////////////////////
+
+    function getRandomUpTo(max){
+      return Math.random() * max;
+    }
+  
+    function getRandomFromArray(arr) {
+      return arr[Math.floor(getRandomUpTo(arr.length))]
+    }
+  
+    function getRandomBetween(min, max) {
+      return min + getRandomUpTo(max - min);
+    }
+  
+    function probability(p) {
+      return Math.random() < p;
+    }
+  
+    function gaussian() {
+      return (Math.random() + Math.random()) / 2
+    }
+
+
+  /////////////////////
+  /////// p5js ////////
+  /////////////////////
+
+  let dimension, canvas, pixels
+
+  class AveragedPixel {
+
+    constructor(x, y, l, isSource) {
+
+      this.x = x
+      this.y = y
+      this.l = l
+
+      this.hue = p5.random(360)
+      this.color = p5.color(this.hue, 255, 255)
+      this.isSource = isSource
+    }
+
+    draw() {
+      p5.fill(this.color)
+      p5.noStroke()
+      p5.square(this.x, this.y, this.l+.5, 0)
+    }
   }
 
-  function getRandomBetween(min, max) {
-    return min + getRandomUpTo(max - min);
+  class Pixel {
+
+    constructor() {
+
+      this.pixels = []
+      this.NUM_SQUARES = p5.round(p5.random(10,100))
+      this.NUM_SOURCES = p5.round(p5.random(2,20))
+      this.SPACING = 0
+
+      let length = p5.width / (this.NUM_SQUARES + this.SPACING)
+      let height = p5.height / (this.NUM_SQUARES + this.SPACING)
+      let lengthMargin = length / this.NUM_SQUARES
+      let heightMargin = height / this.NUM_SQUARES
+
+      for(let i = 0; i < this.NUM_SQUARES; i++) {
+        let curRow = []
+        let x = i * length + this.SPACING * i * lengthMargin + lengthMargin * this.SPACING / 2
+
+        for (let j = 0; j < this.NUM_SQUARES; j++) {
+          let isSource = p5.random(this.NUM_SQUARES*this.NUM_SQUARES) < this.NUM_SOURCES
+          let y = j * height + this.SPACING * j * heightMargin + heightMargin * this.SPACING / 2
+
+          curRow.push(new AveragedPixel(x, y, length, isSource))
+        }
+
+        this.pixels.push(curRow)
+      }
+
+    }
+
+    draw() {
+      for(let i = 0; i < this.pixels.length; i++){
+        for(let j = 0; j < this.pixels[i].length; j++){
+            this.pixels[i][j].draw()
+        }
+      }
+    }
+
+    update() {
+      for(let i = 0; i < this.pixels.length; i++){
+          for(let j = 0; j < this.pixels[i].length; j++){
+              let curSquare = this.pixels[i][j]
+              if(curSquare.isSource){
+                  curSquare.hue = (curSquare.hue+.6)%360
+              }else{
+                  let targetHueX = 0
+                  let targetHueY = 0
+                  let neighborHue
+
+                  // long code below I know its sloppy fight me
+                  neighborHue = this.getHue(i-1,j)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i-1,j-1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i-1,j+1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i,j-1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i,j+1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i+1,j)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i+1,j-1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }
+                  neighborHue = this.getHue(i+1,j+1)
+                  if(neighborHue != -1){
+                      targetHueY += p5.sin(neighborHue-180)
+                      targetHueX += p5.cos(neighborHue-180)
+                  }              
+                  curSquare.hue = p5.atan2(targetHueY, targetHueX)+180
+              }
+              curSquare.color = p5.color(curSquare.hue, 37, 77)
+          }
+      }
+    }
+
+    getHue(row,col) {
+      if(row < 0 || col < 0 || row == this.NUM_SQUARES || col == this.NUM_SQUARES){
+          return -1
+      }else{
+          return this.pixels[row][col].hue
+      }
+    }
   }
 
-  function probability(p) {
-    return Math.random() < p;
+
+  p5.setup = (parent) => {
+
+    p5.frameRate(60)
+    p5.pixelDensity(2.0)
+    p5.noStroke()
+    p5.colorMode(p5.HSB, 360, 100, 100)
+    p5.angleMode(p5.DEGREES)
+
+    p5.createCanvas(p5.windowWidth, p5.windowHeight).parent(parent)
+    // canvas.mouseClicked(p5.handleClick)
+
+    pixels = new Pixel(p5)
+    
   }
 
-  function gaussian() {
-    return (Math.random() + Math.random()) / 2
+  p5.draw = () => {
+    p5.background(10, 40, 50)
+    p5.fill(255)
+
+    p5.clear()
+    pixels.update()
+    pixels.draw()
+
+
+
+    // let waveform = freq.getValue()
+    // console.log(waveform)
+    // for(let i = 0; i < waveform.length; i++){
+    //   let x = p5.map(i, 0, waveform.length, 0, p5.width)
+    //   let y = p5.map(waveform[i], -1, 1, p5.height, 0)
+    //   p5.circle(x, y, 3)
+    // }
   }
+
+  Tone.Transport.bpm.value = 140;
+
+  p5.mouseClicked = () => {
+    Tone.start()
+    Tone.Transport.start()
+    osc.start()
+    makeScheduleChord(synth)
+    makeScheduleHarp(sampler)
+    // synth.triggerAttackRelease('A3', .1)
+    console.log('generating...')
+  }
+
+
+
+
+
+
 
 
   const sampler = new Tone.Sampler({
@@ -99,7 +296,6 @@ function App() {
       console.log(chordNotes)
       chordNotes.forEach(note => {
         synth.triggerAttackRelease(note, '2n', `+${getRandomBetween(0, 5)}`, getRandomBetween(0, .8))
-
         console.log(note)
       })
       Tone.Transport.scheduleOnce(() => {
@@ -176,6 +372,7 @@ function App() {
   const reverb = new Tone.Convolver(airportReverb)
   const bloom = new Tone.Convolver(bloom2)
   const echo = new Tone.FeedbackDelay('16n', 0.2)
+  const freq = new Tone.Waveform()
 
   sampler.connect(filter2)
   filter2.connect(bloom)
@@ -185,28 +382,26 @@ function App() {
   filter.connect(echo)
 
   echo.connect(reverb)
-  reverb.toDestination()
+  reverb.connect(freq)
+  freq.toDestination()
+
+}
+
+componentDidMount() {
+  this.myP5 = new p5(this.Sketch, this.myRef.current)
+}
 
 
-  Tone.Transport.bpm.value = 140;
+render() {
 
-  const startApp = async () => {
-    await Tone.start()
-    Tone.Transport.start()
-    osc.start()
-    makeScheduleChord(synth)
-    makeScheduleHarp(sampler)
-    // synth.triggerAttackRelease('A3', .1)
-    console.log('generating...')
-  }
-
-
-
+  
   return (
     <>
-      <button onClick={startApp}>generate</button>
+      {/* <button onClick={startApp}>generate</button> */}
+      <div ref={this.myRef}/>
     </>
   )
+}
 }
 
 export default App;
