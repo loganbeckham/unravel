@@ -7,6 +7,9 @@ import { invert } from '@generative-music/utilities';
 import { Scale, Key, Chord } from "tonal";
 import p5 from 'p5'
 
+
+// Harp Samples
+
 import A2 from './sounds/harp/KSHarp_A2_mf.wav'
 import D2 from './sounds/harp/KSHarp_D2_mf.wav'
 import F2 from './sounds/harp/KSHarp_F2_mf.wav'
@@ -18,6 +21,9 @@ import F4 from './sounds/harp/KSHarp_F4_mf.wav'
 import C5 from './sounds/harp/KSHarp_C5_mf.wav'
 import G5 from './sounds/harp/KSHarp_G5_mf.wav'
 import D6 from './sounds/harp/KSHarp_D6_mf.wav'
+
+
+// Piano Samples
 
 import pianoC2 from './sounds/piano/UR1_C2_mf_RR1.wav'
 import pianoC3 from './sounds/piano/UR1_C3_mf_RR1.wav'
@@ -31,15 +37,16 @@ import pianoG5 from './sounds/piano/UR1_G5_mf_RR1.wav'
 import pianoG6 from './sounds/piano/UR1_G6_mf_RR1.wav'
 
 
+// Reverb  IRs
+
 import airportReverb from './sounds/convolutionreverb/AirportTerminal.wav'
 import bloom2 from './sounds/convolutionreverb/Midiverb_II-49-Bloom2 7sec.wav'
 import reverse from './sounds/convolutionreverb/Midiverb_II-44-Reverse 150msec.wav'
 
 
+
 function sketch(p5) {
 
-
-  
         /////////////////////
         //// randomizers ////
         /////////////////////
@@ -75,14 +82,22 @@ function sketch(p5) {
 
             constructor(x, y, l, isSource) {
 
+                // location of pixel
+
                 this.x = x
                 this.y = y
+
+
+                // size with screen size conditional
+
                 if (p5.width < 700) {
                     this.l = l * 2
                 } else {
                     this.l = l
                 }
                 
+
+                // Randomize hue, create color, determine isSource to be false
 
                 this.hue = p5.random(360)
                 this.color = p5.color(this.hue, 255, 255)
@@ -108,22 +123,31 @@ function sketch(p5) {
                 let length = p5.width / this.numPixels
                 let height = p5.height / this.numPixels
 
+                
+                // Iterates over pixel count creating each row of pixels
 
                 for (let i = 0; i < this.numPixels; i++) {
 
                     let curRow = []
                     let x = i * length + this.SPACING * i * this.SPACING / 2
 
+
+                    // Iterate to create each pixel in row
+
                     for (let j = 0; j < this.numPixels; j++) {
+
                         // let isSource = p5.random(this.numPixels*this.numPixels) < 20
                         let isSource = false
 
                         let y = j * height + this.SPACING * j * this.SPACING / 2
 
-                        curRow.push(new AveragedPixel(x, y, length, isSource))
 
+                        // Create Averaged Pixel and Push that to current row
+
+                        curRow.push(new AveragedPixel(x, y, length, isSource))
                     }
 
+                    // push row to "pixels" array
                     
                     this.pixels.push(curRow)
                 }
@@ -136,7 +160,6 @@ function sketch(p5) {
                     for (let j = 0; j < this.pixels[i].length; j++) {
                         this.pixels[i][j].draw()
                     }
-
                 }
             }
 
@@ -146,14 +169,16 @@ function sketch(p5) {
 
                     for (let j = 0; j < this.pixels[i].length; j++) {
 
+                        // for each pixel, if  isSource then generate Hue
+
                         let curSquare = this.pixels[i][j]
 
                         if (curSquare.isSource) {
                             curSquare.hue = (curSquare.hue + .6) % 360
-                            
-
 
                         } else {
+
+                            // if != isSource then check each neighboring pixel and set hue
 
                             let targetHueX = 0
                             let targetHueY = 0
@@ -212,7 +237,6 @@ function sketch(p5) {
 
                         curSquare.color = p5.color(curSquare.hue, 20, 255)
                         // curSquare.color = p5.color(curSquare.hue, 20, 255)
-
                     }
                 }
             }
@@ -267,44 +291,10 @@ function sketch(p5) {
 
 
 
-
-
-
   /////////////////////
   ////// TONE.JS //////
   /////////////////////
 
-
-    const sampler = new Tone.Sampler({
-        urls: {
-            A2: A2,
-            D2: D2,
-            F2: F2,
-            C3: C3,
-            G3: G3,
-            A4: A4,
-            D4: D4,
-            F4: F4,
-            C5: C5,
-            G5: G5,
-            D6: D6
-        }
-    })
-
-    const piano = new Tone.Sampler({
-        urls: {
-            C2: pianoC2,
-            C3: pianoC3,
-            C4: pianoC4,
-            C5: pianoC5,
-            C6: pianoC6,
-            G2: pianoG2,
-            G3: pianoG3,
-            G4: pianoG4,
-            G5: pianoG5,
-            G6: pianoG6,
-        }
-    })
 
     let notes = [
         'A',
@@ -345,6 +335,9 @@ function sketch(p5) {
 
 
 
+
+    // Get random note and generate Minor Key Chords
+
     const note = getRandomFromArray(notes)
 
 
@@ -353,43 +346,42 @@ function sketch(p5) {
 
     let scaleChords = getRandomFromArray(keyChords)
 
-    console.log(scaleChords)
-
-    console.log(note)
-
-    console.log(keyChords)
 
 
 
+    // Start Audio Context and Transport
 
     p5.mouseClicked = () => {
 
         if (Tone.Transport.state != "started") {
             Tone.start()
             Tone.Transport.start()
-            osc.start()
+            // osc.start()
             makeScheduleChord(synth)
             console.log('generating...')
         } else {
             Tone.Transport.stop()
-            osc.stop()
+            // osc.stop()
         }
     }
 
 
+    // Play Random Chord From Scale
 
     const makeScheduleChord = () => {
 
         const scheduleChord = () => {
 
+
+            // Get octave for notes / inversions
+
             const octave = getRandomFromArray(['3', '4', '5'])
             const bassOctave = getRandomFromArray(['1', '2'])
 
-
-
             let thisChord = `${getRandomFromArray(gdorian)}`
-            console.log(thisChord)
 
+
+            // Get Chord notes, iterate to add chord octave to each note
 
             let chordNotes = Chord.get(thisChord).notes
 
@@ -401,25 +393,31 @@ function sketch(p5) {
                 thisChordNotes.push(note)
             })
 
-            console.log(thisChordNotes)
 
+            // Create Random Inversion of Chord
 
             const inversion = Math.floor(getRandomBetween(0,5))
 
             thisChordNotes = invert(thisChordNotes, inversion)
 
-            console.log(thisChordNotes)
+
+
+            // Find Root of Inversion and Create Bass Note
 
             let root = thisChordNotes[0].slice(0, -1)
             root = root + bassOctave
 
 
-      
+            // Iterate over chord, play each note at random time and velocity within 5 seconds
+            
             thisChordNotes.forEach(note => {
 
-                console.log(note)
                 let pause = getRandomBetween(0, 5)
                 synth.triggerAttackRelease(note, '2n', `+${pause}`, getRandomBetween(0, .8))
+
+
+                // Create random generator pixel for p5
+
                 let thisPixel = pixels.pixels[Math.floor(p5.random(40))][Math.floor(p5.random(40))]
         
                 setTimeout(() => {
@@ -435,87 +433,134 @@ function sketch(p5) {
       
             })
 
-            console.log(root)
+            // Trigger Root Bass Note at random time within 5 seconds
 
             sampler.triggerAttackRelease(root, '4n', `+${getRandomBetween(0, 5)}`, getRandomBetween(.2, .6))
 
 
+            // Re-run with new chord at random time between 5 and 10 seconds
 
             Tone.Transport.scheduleOnce(() => {
               scheduleChord();
             }, `+${getRandomBetween(5, 10)}`)
         }
 
+        // initial function call
         scheduleChord()
-
     }
 
 
-  let osc = new Tone.OmniOscillator()
+    // Harp (BASS) Note Sampler
+
+    const sampler = new Tone.Sampler({
+        urls: {
+            A2: A2,
+            D2: D2,
+            F2: F2,
+            C3: C3,
+            G3: G3,
+            A4: A4,
+            D4: D4,
+            F4: F4,
+            C5: C5,
+            G5: G5,
+            D6: D6
+        }
+    })
+
+    // Piano Sampler 
+
+    // const piano = new Tone.Sampler({
+    //     urls: {
+    //         C2: pianoC2,
+    //         C3: pianoC3,
+    //         C4: pianoC4,
+    //         C5: pianoC5,
+    //         C6: pianoC6,
+    //         G2: pianoG2,
+    //         G3: pianoG3,
+    //         G4: pianoG4,
+    //         G5: pianoG5,
+    //         G6: pianoG6,
+    //     }
+    // })
   
 
-  let synth = new Tone.PolySynth({
-      harmonicity: 1,
-      volume: -20,
-      voice0: {
-          oscillator: { type: 'sawtooth' },
-          envelope: {
-            attack: 0.1,
-            release: 1,
-            releaseCurve: 'linear'
-          },
-          filterEnvelope: {
-            baseFrequency: 200,
-            octaves: 2,
-            attack: 0.1,
-            decay: 0,
-            release: 1000
-          }
-      },
-      voice1: {
-          oscillator: { type: 'sine' },
-          envelope: {
-            attack: 0.1,
-            release: 1,
-            releaseCurve: 'linear'
-          },
-          filterEnvelope: {
-            baseFrequency: 200,
-            octaves: 2,
-            attack: 0.1,
-            decay: 0,
-            release: 1000
-          }
-      },
-      vibratoRate: 0.5,
-      vibratoAmount: 0.1
+    // Melody Synth
+
+    let synth = new Tone.PolySynth({
+        harmonicity: 1,
+        volume: -20,
+        voice0: {
+            oscillator: { type: 'sawtooth' },
+            envelope: {
+                attack: 0.1,
+                release: 1,
+                releaseCurve: 'linear'
+            },
+            filterEnvelope: {
+                baseFrequency: 200,
+                octaves: 2,
+                attack: 0.1,
+                decay: 0,
+                release: 1000
+            }
+        },
+        voice1: {
+            oscillator: { type: 'sine' },
+            envelope: {
+                attack: 0.1,
+                release: 1,
+                releaseCurve: 'linear'
+            },
+            filterEnvelope: {
+                baseFrequency: 200,
+                octaves: 2,
+                attack: 0.1,
+                decay: 0,
+                release: 1000
+            }
+        },
+        vibratoRate: 0.5,
+        vibratoAmount: 0.1
     });
 
 
-  let filter = new Tone.Filter(1200, "lowpass");
-  let lfo = new Tone.LFO(1, 200, 1200);
-  lfo.connect(filter.frequency)
-  lfo.start()
+    // Filter with slow LFO
 
-  let filter2 = new Tone.Filter(200, "highpass")
+    let filter = new Tone.Filter(1200, "lowpass");
+    let lfo = new Tone.LFO(1, 200, 1200);
+    lfo.connect(filter.frequency)
+    lfo.start()
+
+
+    // Highpass Filter
+
+    let filter2 = new Tone.Filter(200, "highpass")
   
 
-  const reverb = new Tone.Convolver(airportReverb)
-  const bloom = new Tone.Convolver(bloom2)
-  const echo = new Tone.FeedbackDelay('16n', 0.2)
-  const freq = new Tone.Waveform()
+    // Reverb and Echo Effects
 
-  sampler.connect(filter2)
-  filter2.connect(bloom)
-  bloom.connect(filter)
+    const reverb = new Tone.Convolver(airportReverb)
+    const bloom = new Tone.Convolver(bloom2)
+    const echo = new Tone.FeedbackDelay('16n', 0.2)
+    const freq = new Tone.Waveform()
 
-  piano.volume.value = -6
-  synth.connect(filter)
-  filter.connect(echo)
 
-  echo.connect(reverb)
-  reverb.connect(freq)
-  freq.toDestination()
+    // Connections 
+
+    sampler.connect(filter2)
+    filter2.connect(bloom)
+    bloom.connect(filter)
+
+    synth.connect(filter)
+
+
+    filter.connect(echo)
+
+    echo.connect(reverb)
+    reverb.connect(freq)
+    freq.toDestination()
 }
 
 
@@ -532,7 +577,7 @@ function App() {
             p5Instance.remove();
         }
 
-    }, [])
+}, [])
 
 
   return (
@@ -563,9 +608,8 @@ function App() {
                     </ul>
                 </div>
             </div>
-            
         </div>
-      <div id='p5sketch' ref={p5ContainerRef}/>
+        <div id='p5sketch' ref={p5ContainerRef}/>
     </>
   )
 }
