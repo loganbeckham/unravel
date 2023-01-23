@@ -31,17 +31,14 @@ import pianoG5 from './sounds/piano/UR1_G5_mf_RR1.wav'
 import pianoG6 from './sounds/piano/UR1_G6_mf_RR1.wav'
 
 
-
-
-
-
-
 import airportReverb from './sounds/convolutionreverb/AirportTerminal.wav'
 import bloom2 from './sounds/convolutionreverb/Midiverb_II-49-Bloom2 7sec.wav'
 import reverse from './sounds/convolutionreverb/Midiverb_II-44-Reverse 150msec.wav'
 
 
 function sketch(p5) {
+
+
   
         /////////////////////
         //// randomizers ////
@@ -80,7 +77,12 @@ function sketch(p5) {
 
                 this.x = x
                 this.y = y
-                this.l = l
+                if (p5.width < 700) {
+                    this.l = l * 2
+                } else {
+                    this.l = l
+                }
+                
 
                 this.hue = p5.random(360)
                 this.color = p5.color(this.hue, 255, 255)
@@ -147,7 +149,7 @@ function sketch(p5) {
                         let curSquare = this.pixels[i][j]
 
                         if (curSquare.isSource) {
-                            curSquare.hue = (curSquare.hue + .6) % 1000
+                            curSquare.hue = (curSquare.hue + .6) % 360
                             
 
 
@@ -217,7 +219,7 @@ function sketch(p5) {
 
             getHue(row,col) {
 
-                if(row < 0 || col < 0 || row == this.numPixels || col == this.numPixels){
+                if (row < 0 || col < 0 || row == this.numPixels || col == this.numPixels) {
                     return -1
                 }else{
                     return this.pixels[row][col].hue
@@ -261,7 +263,6 @@ function sketch(p5) {
         p5.windowResized = () => {
             p5.createCanvas(p5.windowWidth, p5.windowHeight)
             pixels = new Pixel()
-            console.log("happening.")
         }
 
 
@@ -530,7 +531,7 @@ function App() {
         return () => {
             p5Instance.remove();
         }
-        
+
     }, [])
 
 
