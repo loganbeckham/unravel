@@ -1,6 +1,15 @@
 #p5sketch {
-  filter: blur(6px);
+  /* filter: blur(1px); */
   /* filter: blur(10px); */
+}
+
+.navbar {
+  background-color: transparent;
+  position: fixed
+}
+
+#site-name {
+  color: white;
 }
 
 

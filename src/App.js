@@ -1,12 +1,10 @@
 import './App.css';
 import React, {useEffect, useState} from 'react';
 import * as Tone from 'tone'
+import { invert } from '@generative-music/utilities';
+import { Scale, Key, Chord } from "tonal";
 import p5 from 'p5'
-import { Chord, fillStr, Note, Scale } from "tonal";
-import { LowpassCombFilter, Player, Sampler, Time } from 'tone';
-import { major7th, minor7th, dominant7th, invert, minor} from '@generative-music/utilities'
 
-import C2 from './sounds/piano/UR1_C2_mf_RR1.wav'
 import A2 from './sounds/harp/KSHarp_A2_mf.wav'
 import D2 from './sounds/harp/KSHarp_D2_mf.wav'
 import F2 from './sounds/harp/KSHarp_F2_mf.wav'
@@ -21,9 +19,6 @@ import D6 from './sounds/harp/KSHarp_D6_mf.wav'
 import airportReverb from './sounds/convolutionreverb/AirportTerminal.wav'
 import bloom2 from './sounds/convolutionreverb/Midiverb_II-49-Bloom2 7sec.wav'
 import reverse from './sounds/convolutionreverb/Midiverb_II-44-Reverse 150msec.wav'
-import { CircleBufferGeometry } from 'three';
-// import { LinearEncoding } from 'three';
-
 
 
 
@@ -272,113 +267,159 @@ class App extends React.Component {
   /////////////////////
 
 
-  Tone.Transport.bpm.value = 140;
+    const sampler = new Tone.Sampler({
+        urls: {
+            A2: A2,
+            D2: D2,
+            F2: F2,
+            C3: C3,
+            G3: G3,
+            A4: A4,
+            D4: D4,
+            F4: F4,
+            C5: C5,
+            G5: G5,
+            D6: D6
+        }
+    })
 
-  p5.mouseClicked = () => {
-    Tone.start()
-    Tone.Transport.start()
-    osc.start()
-    makeScheduleChord(synth)
-    makeScheduleHarp(sampler)
-    // synth.triggerAttackRelease('A3', .1)
-    console.log('generating...')
-  }
+    let notes = [
+        'A',
+        'Bb',
+        'B',
+        'C',
+        'Db',
+        'D',
+        'Eb',
+        'E',
+        'F',
+        'Gb',
+        'G',
+        'Ab'
+    ]
 
 
-  const sampler = new Tone.Sampler({
-    urls: {
-      A2: A2,
-      D2: D2,
-      F2: F2,
-      C3: C3,
-      G3: G3,
-      A4: A4,
-      D4: D4,
-      F4: F4,
-      C5: C5,
-      G5: G5,
-      D6: D6
+    const noteLengths = [
+        '4n',
+        '8n',
+        '2n',
+        '16n'
+    ]
+
+    const keyChords = []
+
+    console.log(Scale.get("G Dorian").notes)
+
+    const gdorian = [
+        'Gm7',
+        'Am7',
+        'Bbmaj7',
+        'Cmaj7',
+        'Dm7',
+        'Em7b5',
+        'Fmaj7'
+    ]
+
+
+
+    const note = getRandomFromArray(notes)
+
+
+    keyChords.push(Key.minorKey(note).natural.chords)
+
+
+    let scaleChords = getRandomFromArray(keyChords)
+
+    console.log(scaleChords)
+
+    console.log(note)
+
+    console.log(keyChords)
+
+
+
+
+    p5.mouseClicked = () => {
+        Tone.start()
+        Tone.Transport.start()
+        osc.start()
+        makeScheduleChord(synth)
+        // makeScheduleHarp(sampler)
+        console.log('generating...')
     }
-  })
 
-  let notes = [
-    'Ab',
-    'Eb',
-    'F',
-    'C',
-    'Db',
-    'G',
-    'Bb'
-  ]
 
-  const noteLengths = [
-    '4n',
-    '8n',
-    '2n',
-    '16n'
-  ]
 
-  const makeScheduleChord = synth => {
-    const scheduleChord = () => {
-      const note = getRandomFromArray(notes)
-      const octave = getRandomFromArray(['2', '3', '4', '5'])
-      const tonic = `${note}${octave}`
-      const inversion = Math.floor(getRandomBetween(0,5))
-      let chordNotes = []
-      if (note == 'C' || note == 'F' || note == 'G' || note == 'Bb') {
-        chordNotes = invert(minor7th(tonic), inversion)
-      } else if (note == 'Db' || note == 'Ab' ) {
-        chordNotes = invert(major7th(tonic), inversion)
-      } else {
-        chordNotes = invert(dominant7th(tonic), inversion)
-      }
-      console.log(chordNotes)
+    const makeScheduleChord = () => {
 
-      chordNotes.forEach(note => {
+        const scheduleChord = () => {
 
-        let pause = getRandomBetween(0, 5)
-        synth.triggerAttackRelease(note, '2n', `+${pause}`, getRandomBetween(0, .8))
-        let thisPixel = pixels.pixels[Math.floor(p5.random(40))][Math.floor(p5.random(40))]
+            const octave = getRandomFromArray(['3', '4', '5'])
+            const bassOctave = getRandomFromArray(['1', '2'])
 
-        setTimeout(() => {
-            thisPixel.hue = p5.random(360)
-            thisPixel.color = p5.color(thisPixel.hue, 255, 255)
-            thisPixel.isSource = true
-        }, pause * 1000)
 
-        setTimeout(() => {
-            thisPixel.isSource = false
-        }, 45000)
 
-      })
-      Tone.Transport.scheduleOnce(() => {
-        scheduleChord();
-      }, `+${getRandomBetween(5, 8)}`)
+            let thisChord = `${getRandomFromArray(gdorian)}`
+            console.log(thisChord)
+
+
+            let chordNotes = Chord.get(thisChord).notes
+
+            let thisChordNotes = []
+
+
+            chordNotes.forEach(note => {
+                note = note + octave
+                thisChordNotes.push(note)
+            })
+
+            console.log(thisChordNotes)
+
+
+            const inversion = Math.floor(getRandomBetween(0,5))
+
+            thisChordNotes = invert(thisChordNotes, inversion)
+
+            console.log(thisChordNotes)
+
+            let root = thisChordNotes[0].slice(0, -1)
+            root = root + bassOctave
+
+
+      
+            thisChordNotes.forEach(note => {
+
+                console.log(note)
+                let pause = getRandomBetween(0, 5)
+                synth.triggerAttackRelease(note, '2n', `+${pause}`, getRandomBetween(0, .8))
+                let thisPixel = pixels.pixels[Math.floor(p5.random(40))][Math.floor(p5.random(40))]
+        
+                setTimeout(() => {
+                    thisPixel.hue = p5.random(360)
+                    thisPixel.color = p5.color(thisPixel.hue, 255, 255)
+                    thisPixel.isSource = true
+                }, pause * 1000)
+        
+                setTimeout(() => {
+                    thisPixel.isSource = false
+                }, 45000)
+      
+            })
+
+            console.log(root)
+
+            sampler.triggerAttackRelease(root, '4n', `+${getRandomBetween(0, 5)}`, getRandomBetween(.2, .6))
+
+
+
+            Tone.Transport.scheduleOnce(() => {
+              scheduleChord();
+            }, `+${getRandomBetween(8, 12)}`)
+        }
+
+        scheduleChord()
+
     }
-    scheduleChord()
-  }
-
-
-
-
-
-
-
-
-  
-  const makeScheduleHarp = sampler => {
-    const scheduleHarp = () => {
-      const note = getRandomFromArray(notes)
-      const octave = getRandomFromArray(['0', '1', '2'])
-      const tonic = `${note}${octave}`
-      sampler.triggerAttackRelease(tonic, '4n', `+${getRandomBetween(0, 5)}`, getRandomBetween(.3, .7))
-      console.log(tonic)
-      Tone.Transport.scheduleOnce(() => {
-        scheduleHarp();
-      }, `+${getRandomBetween(5, 8)}`)
-    }
-    scheduleHarp()
-  }
 
 
   let osc = new Tone.OmniOscillator()
@@ -456,6 +497,12 @@ componentDidMount() {
 render() {
   return (
     <>
+        <div className='navbar'>
+            <div>
+                <h1 id='site-name'>unravel</h1>
+            </div>
+            
+        </div>
       <div id='p5sketch' ref={this.myRef}/>
     </>
   )
