@@ -1,5 +1,7 @@
 import './App.css';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.min.js'
 import * as Tone from 'tone'
 import { invert } from '@generative-music/utilities';
 import { Scale, Key, Chord } from "tonal";
@@ -16,22 +18,31 @@ import F4 from './sounds/harp/KSHarp_F4_mf.wav'
 import C5 from './sounds/harp/KSHarp_C5_mf.wav'
 import G5 from './sounds/harp/KSHarp_G5_mf.wav'
 import D6 from './sounds/harp/KSHarp_D6_mf.wav'
+
+import pianoC2 from './sounds/piano/UR1_C2_mf_RR1.wav'
+import pianoC3 from './sounds/piano/UR1_C3_mf_RR1.wav'
+import pianoC4 from './sounds/piano/UR1_C4_mf_RR1.wav'
+import pianoC5 from './sounds/piano/UR1_C5_mf_RR1.wav'
+import pianoC6 from './sounds/piano/UR1_C6_mf_RR1.wav'
+import pianoG2 from './sounds/piano/UR1_G2_mf_RR1.wav'
+import pianoG3 from './sounds/piano/UR1_G3_mf_RR1.wav'
+import pianoG4 from './sounds/piano/UR1_G4_mf_RR1.wav'
+import pianoG5 from './sounds/piano/UR1_G5_mf_RR1.wav'
+import pianoG6 from './sounds/piano/UR1_G6_mf_RR1.wav'
+
+
+
+
+
+
+
 import airportReverb from './sounds/convolutionreverb/AirportTerminal.wav'
 import bloom2 from './sounds/convolutionreverb/Midiverb_II-49-Bloom2 7sec.wav'
 import reverse from './sounds/convolutionreverb/Midiverb_II-44-Reverse 150msec.wav'
 
 
-
-class App extends React.Component {
+function sketch(p5) {
   
-    constructor() {
-        super()
-        this.myRef = React.createRef()
-    }
-
-
-    Sketch = (p5) => {
-
         /////////////////////
         //// randomizers ////
         /////////////////////
@@ -61,7 +72,7 @@ class App extends React.Component {
         /////// p5js ////////
         /////////////////////
 
-        let dimension, canvas, pixels
+        let pixels
 
         class AveragedPixel {
 
@@ -74,11 +85,6 @@ class App extends React.Component {
                 this.hue = p5.random(360)
                 this.color = p5.color(this.hue, 255, 255)
                 this.isSource = isSource
-
-                if (isSource) {
-                    // sourcePixels.push(this)
-                    // console.log(sourcePixels)
-                }
 
             }
 
@@ -230,7 +236,6 @@ class App extends React.Component {
             p5.angleMode(p5.DEGREES)
 
             p5.createCanvas(p5.windowWidth, p5.windowHeight).parent(parent)
-            p5.filter(p5.GRAY)
 
             pixels = new Pixel()
 
@@ -254,8 +259,10 @@ class App extends React.Component {
         }
 
         p5.windowResized = () => {
-            p5.resizeCanvas(p5.windowWidth, p5.windowHeight)
-        } 
+            p5.createCanvas(p5.windowWidth, p5.windowHeight)
+            pixels = new Pixel()
+            console.log("happening.")
+        }
 
 
 
@@ -280,6 +287,21 @@ class App extends React.Component {
             C5: C5,
             G5: G5,
             D6: D6
+        }
+    })
+
+    const piano = new Tone.Sampler({
+        urls: {
+            C2: pianoC2,
+            C3: pianoC3,
+            C4: pianoC4,
+            C5: pianoC5,
+            C6: pianoC6,
+            G2: pianoG2,
+            G3: pianoG3,
+            G4: pianoG4,
+            G5: pianoG5,
+            G6: pianoG6,
         }
     })
 
@@ -308,7 +330,7 @@ class App extends React.Component {
 
     const keyChords = []
 
-    console.log(Scale.get("G Dorian").notes)
+    // console.log(Scale.get("G Dorian").notes)
 
     const gdorian = [
         'Gm7',
@@ -340,12 +362,17 @@ class App extends React.Component {
 
 
     p5.mouseClicked = () => {
-        Tone.start()
-        Tone.Transport.start()
-        osc.start()
-        makeScheduleChord(synth)
-        // makeScheduleHarp(sampler)
-        console.log('generating...')
+
+        if (Tone.Transport.state != "started") {
+            Tone.start()
+            Tone.Transport.start()
+            osc.start()
+            makeScheduleChord(synth)
+            console.log('generating...')
+        } else {
+            Tone.Transport.stop()
+            osc.stop()
+        }
     }
 
 
@@ -398,6 +425,7 @@ class App extends React.Component {
                     thisPixel.hue = p5.random(360)
                     thisPixel.color = p5.color(thisPixel.hue, 255, 255)
                     thisPixel.isSource = true
+                    console.log('bing')
                 }, pause * 1000)
         
                 setTimeout(() => {
@@ -414,7 +442,7 @@ class App extends React.Component {
 
             Tone.Transport.scheduleOnce(() => {
               scheduleChord();
-            }, `+${getRandomBetween(8, 12)}`)
+            }, `+${getRandomBetween(5, 10)}`)
         }
 
         scheduleChord()
@@ -480,6 +508,7 @@ class App extends React.Component {
   filter2.connect(bloom)
   bloom.connect(filter)
 
+  piano.volume.value = -6
   synth.connect(filter)
   filter.connect(echo)
 
@@ -488,25 +517,56 @@ class App extends React.Component {
   freq.toDestination()
 }
 
-componentDidMount() {
-  this.myP5 = new p5(this.Sketch, this.myRef.current)
-}
 
 
+function App() {
 
-render() {
+    const p5ContainerRef = useRef()
+
+    useEffect(() => {
+
+        const p5Instance = new p5(sketch, p5ContainerRef.current)
+
+        return () => {
+            p5Instance.remove();
+        }
+        
+    }, [])
+
+
   return (
     <>
-        <div className='navbar'>
-            <div>
+        <div className='nav'>
+            <div className='brand'>
                 <h1 id='site-name'>unravel</h1>
+            </div>
+            <div className='buttons'>
+                <div className="dropdown">
+                    <button className="btn btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Key
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a className="dropdown-item" href="#">Action</a></li>
+                        <li><a className="dropdown-item" href="#">Another action</a></li>
+                        <li><a className="dropdown-item" href="#">Something else here</a></li>
+                    </ul>
+                </div>
+                <div className="dropdown">
+                    <button className="btn btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Scale
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a className="dropdown-item" href="#">Action</a></li>
+                        <li><a className="dropdown-item" href="#">Another action</a></li>
+                        <li><a className="dropdown-item" href="#">Something else here</a></li>
+                    </ul>
+                </div>
             </div>
             
         </div>
-      <div id='p5sketch' ref={this.myRef}/>
+      <div id='p5sketch' ref={p5ContainerRef}/>
     </>
   )
-}
 }
 
 export default App;
