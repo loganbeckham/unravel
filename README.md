@@ -4,7 +4,7 @@ unravel is a generative music app designed to endlessly generate ambient and non
 
 ## Technology
 
-React, Node.js, Tone.js, p5.js
+React, Node.js, Tone.js, Tonal.js, p5.js
 
 ### Made possible with the help of these projects:
 
