@@ -564,6 +564,9 @@ function sketch(p5) {
 }
 
 
+alert("Hi! Thanks for visiting unravel. This site is currently in development and the user interaction features are in testing. For now, please enjoy this demo version of unravel. After closing this alert, click anywhere on the canvas to start and stop the generative system. Enjoy! :)")
+
+
 
 function App() {
 
